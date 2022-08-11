@@ -64,7 +64,7 @@ async def check(ua, ck):
             "Referer": "https://home.m.jd.com/myJd/newhome.action?sceneval=2&ufc=&",
             "Accept-Encoding": "gzip, deflate",
         }
-        result = requests.get(url=url, headers=header, timeout=2).text
+        result = requests.get(url=url, headers=header, timeout=5).text
         codestate = json.loads(result)
         if codestate['retcode'] == '1001':
             msg = "当前ck已失效，请检查"
@@ -94,7 +94,7 @@ async def plogin(ua,cookie):
         'Referer': 'https://prodev.m.jd.com/',
         'User-Agent':ua
     }
-    response = requests.get(url=url,headers=header,timeout=30).text
+    response = requests.get(url=url,headers=header,timeout=5).text
     return response
 
 # 活动接口
@@ -148,7 +148,7 @@ async def check_ruhui(body,cookie,venderId,ua):
         'Referer': f'https://shopmember.m.jd.com/shopcard/?venderId={venderId}&channel=801&returnUrl={json.dumps(activityUrl)}',
         'Accept-Encoding': 'gzip, deflate'
     }
-    response = requests.get(url=url,headers=headers,timeout=30000).text
+    response = requests.get(url=url,headers=headers,timeout=5).text
     return json.loads(response)
 
 # 领取奖励
