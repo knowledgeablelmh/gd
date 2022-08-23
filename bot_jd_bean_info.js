@@ -5,7 +5,7 @@
  
 [task_local]
 #京豆详情统计
-1 1 1 1 1 1 jd_bean_info.js, tag=京豆详情统计, img-url=https://raw.githubusercontent.com/Orz-3/mini/master/Color/jd.png, enabled=true
+20 22 * * * jd_bean_info.js, tag=京豆详情统计, img-url=https://raw.githubusercontent.com/Orz-3/mini/master/Color/jd.png, enabled=true
  * */
 const $ = new Env('京豆详情统计');
 const jdCookieNode = $.isNode() ? require('./jdCookie.js') : '';
@@ -25,7 +25,7 @@ if ($.isNode()) {
 
 let intcheckckseq=999999;
 let strcheckck = process.env.BOTCHECKCODE;
-let lnShowTop = 10;
+let lnShowTop = 0;
 if(!strcheckck){
 	console.log("【账号�】没有获取到要查询的账号");
 	return
