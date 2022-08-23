@@ -25,7 +25,7 @@ if ($.isNode()) {
 
 let intcheckckseq=999999;
 let strcheckck = process.env.BOTCHECKCODE;
-let lnShowTop = 0;
+let lnShowTop = 10;
 if(!strcheckck){
 	console.log("【账号�】没有获取到要查询的账号");
 	return
