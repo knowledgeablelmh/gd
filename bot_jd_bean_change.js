@@ -244,7 +244,8 @@ if(DisableIndex!=-1){
         $.jxFactoryInfo = '';
         $.jxFactoryReceive = '';
         $.jdCash = 0;
-        $.isPlusVip = 0;
+        $.isPlusVip = false;
+		$.isRealNameAuth=false;
         $.JingXiang = "";
         $.allincomeBean = 0; //月收入
         $.allexpenseBean = 0; //月支出
@@ -265,11 +266,10 @@ if(DisableIndex!=-1){
 		$.JoyRunningAmount = "";
 		$.ECardinfo = "";
 		$.PlustotalScore=0;
+		
         TempBaipiao = "";
         strGuoqi = "";
-		await Promise.all([
-		        TotalBean(),
-		        TotalBean2()])
+		await TotalBean()
 		
         if (!$.isLogin) {
             await isLoginByX1a0He();
@@ -313,44 +313,17 @@ async function showMsg() {
 	ReturnMessage = "";
 	var strsummary="";
 	ReturnMessageTitle = `【您的账号🆔${(intcheckckseq+1)}收支情况】\n`;
-
-	if ($.levelName || $.JingXiang){
-		ReturnMessage += `【账号信息】`;
-		if ($.levelName) {
-			if ($.levelName.length > 2)
-				$.levelName = $.levelName.substring(0, 2);
-
-			if ($.levelName == "注册")
-				$.levelName = `😊普通`;
-
-			if ($.levelName == "钻石")
-				$.levelName = `💎钻石`;
-
-			if ($.levelName == "金牌")
-				$.levelName = `🥇金牌`;
-
-			if ($.levelName == "银牌")
-				$.levelName = `🥈银牌`;
-
-			if ($.levelName == "铜牌")
-				$.levelName = `🥉铜牌`;
-
-			if ($.isPlusVip == 1){
-				ReturnMessage += `${$.levelName}Plus`;
-				if($.PlustotalScore)
-					ReturnMessage+=`(${$.PlustotalScore}分)`
-			}
-			else
-				ReturnMessage += `${$.levelName}会员`;
-		}
-
-		if ($.JingXiang){
-			if ($.levelName) {
-				ReturnMessage +=",";
-			}
-			ReturnMessage += `${$.JingXiang}`;
-		}
-		ReturnMessage +=`\n`;
+	
+	if ($.JingXiang) {		
+	    ReturnMessage += `【账号信息】`;
+	    if ($.isPlusVip) {
+	        ReturnMessage += `Plus会员`;
+	        if ($.PlustotalScore)
+	            ReturnMessage += `(${$.PlustotalScore}分)`
+	    } else {
+	        ReturnMessage += `普通会员`;
+	    }  
+	    ReturnMessage += `,京享值${$.JingXiang}\n`;	    
 	}
 	
 	ReturnMessage += `【今日京豆】收${$.todayIncomeBean}豆`;
@@ -766,13 +739,17 @@ function getSign(functionId, body) {
     })
   })
 }
-function TotalBean() {
+
+/* function TotalBean() {
 	return new Promise(async resolve => {
 		const options = {
 			url: "https://me-api.jd.com/user_new/info/GetJDUserInfoUnion",
 			headers: {
+				"Accept": "application/json, text/plain",
+				"accept-encoding": "gzip, deflate, br",
+				"content-type": "application/json;charset=UTF-8",
 				Cookie: cookie,
-				"User-Agent": "jdapp;iPhone;9.4.4;14.3;network/4g;Mozilla/5.0 (iPhone; CPU iPhone OS 14_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1",
+				"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36 Edg/106.0.1370.42"
 			},
 			timeout: 10000
 		}
@@ -780,7 +757,7 @@ function TotalBean() {
 			try {
 				if (err) {
 					$.logErr(err)
-				} else {
+				} else {					
 					if (data) {
 						data = JSON.parse(data);
 
@@ -812,54 +789,60 @@ function TotalBean() {
 			}
 		})
 	})
+} */
+
+function TotalBean() {
+    return new Promise(async resolve => {
+        const options = {
+            "url": `https://wq.jd.com/user/info/QueryJDUserInfo?sceneval=2`,
+            "headers": {
+                "Accept": "application/json,text/plain, */*",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "zh-cn",
+                "Connection": "keep-alive",
+                "Cookie": cookie,
+                "Referer": "https://wqs.jd.com/my/jingdou/my.shtml?sceneval=2",
+                "User-Agent": $.isNode() ? (process.env.JD_USER_AGENT ? process.env.JD_USER_AGENT : (require('./USER_AGENTS').USER_AGENT)) : ($.getdata('JDUA') ? $.getdata('JDUA') : "jdapp;iPhone;9.4.4;14.3;network/4g;Mozilla/5.0 (iPhone; CPU iPhone OS 14_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148;supportJDSHWK/1")
+            }
+        }
+        $.post(options, (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log(`${JSON.stringify(err)}`)
+                    console.log(`${$.name} API请求失败，请检查网路重试`)
+                } else {
+                    if (data) {
+                        data = JSON.parse(data);
+                        if (data['retcode'] === 13) {
+                            $.isLogin = false; //cookie过期
+                            return
+                        }
+                        if (data['retcode'] === 0) {
+                            $.nickName = (data['base'] && data['base'].nickname) || $.UserName;
+							$.isPlusVip=data['isPlusVip'];
+							$.isRealNameAuth=data['isRealNameAuth'];
+							$.beanCount=(data['base'] && data['base'].jdNum) || 0 ;		
+							$.JingXiang = (data['base'] && data['base'].jvalue) || 0 ;						
+                        } else {
+                            $.nickName = $.UserName
+                        }
+						
+							
+							
+                    } else {
+                        console.log(`京东服务器返回空数据`)
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp)
+            } finally {
+                resolve();
+            }
+        })
+    })
 }
-function TotalBean2() {
-	return new Promise(async(resolve) => {
-		const options = {
-			url: `https://wxapp.m.jd.com/kwxhome/myJd/home.json?&useGuideModule=0&bizId=&brandId=&fromType=wxapp&timestamp=${Date.now()}`,
-			headers: {
-				Cookie: cookie,
-				'content-type': `application/x-www-form-urlencoded`,
-				Connection: `keep-alive`,
-				'Accept-Encoding': `gzip,compress,br,deflate`,
-				Referer: `https://servicewechat.com/wxa5bf5ee667d91626/161/page-frame.html`,
-				Host: `wxapp.m.jd.com`,
-				'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.10(0x18000a2a) NetType/WIFI Language/zh_CN`,
-			},
-			timeout: 10000
-		};
-		$.post(options, (err, resp, data) => {
-			try {
-				if (err) {
-					$.logErr(err);
-				} else {
-					if (data) {						
-						data = JSON.parse(data);						
-						if (!data.user) {
-							return;
-						}
-						const userInfo = data.user;						
-						if (userInfo) {
-							if (!$.nickName)
-								$.nickName = userInfo.petName;
-							if ($.beanCount == 0) {
-								$.beanCount = userInfo.jingBean;
-							}
-							$.JingXiang = userInfo.uclass;
-						}
-					} else {
-						$.log('京东服务器返回空数据');
-					}
-				}
-			} catch (e) {
-				$.logErr(e);
-			}
-			finally {
-				resolve();
-			}
-		});
-	});
-}
+
 
 function isLoginByX1a0He() {
 	return new Promise((resolve) => {
@@ -1061,7 +1044,7 @@ function redPacket() {
 								if (vo['endTime'] === t) {
 									$.jxRedExpire += parseFloat(vo.balance)
 								}
-							} else if (vo.activityName.includes("极速版")) {
+							} else if (vo.activityName.includes("极速版") || vo.activityName.includes("京东特价")) {
 								$.jsRed += parseFloat(vo.balance)
 								if (vo['endTime'] === t) {
 									$.jsRedExpire += parseFloat(vo.balance)
@@ -1996,7 +1979,6 @@ async function jxbean() {
 
 }
 
-
 function GetJoyRuninginfo() {
 	if (!EnableJoyRun)
 		return;
@@ -2010,9 +1992,9 @@ function GetJoyRuninginfo() {
         "Content-Type": "application/x-www-form-urlencoded",
         "Cookie": cookie,
         "Host": "api.m.jd.com",
-        "Origin": "https://joypark.jd.com",
-        "Referer": "https://joypark.jd.com/",
-        "User-Agent": $.UA
+        "Origin": "https://h5platform.jd.com",
+        "Referer": "https://h5platform.jd.com/",
+        "User-Agent": `jdpingou;iPhone;4.13.0;14.4.2;${randomString(40)};network/wifi;model/iPhone10,2;appBuild/100609;ADID/00000000-0000-0000-0000-000000000000;supportApplePay/1;hasUPPay/0;pushNoticeIsOpen/1;hasOCPay/0;supportBestPay/0;session/${Math.random * 98 + 1};pap/JA2019_3111789;brand/apple;supportJDSHWK/1;Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148`
 		}
 	var DateToday = new Date();
 	const body = {
@@ -2021,15 +2003,15 @@ function GetJoyRuninginfo() {
 		'joyLinkId':'LsQNxL7iWDlXUs6cFl-AAg'
     };
     const options = {
-        url: `https://api.m.jd.com/?functionId=runningPageHome&body=${encodeURIComponent(JSON.stringify(body))}&t=${DateToday.getTime()}&appid=activities_platform&client=ios&clientVersion=3.8.12`,
+        url: `https://api.m.jd.com/?functionId=runningPageHome&body=${encodeURIComponent(JSON.stringify(body))}&t=${DateToday.getTime()}&appid=activities_platform&client=ios&clientVersion=3.9.2`,
         headers,
     }
-    return new Promise(resolve => {
+	return new Promise(resolve => {
         $.get(options, (err, resp, data) => {
             try {
                 if (err) {
                     console.log(`${JSON.stringify(err)}`)
-                    console.log(`${$.name} API请求失败，请检查网路重试`)
+                    console.log(`GetJoyRuninginfo API请求失败，请检查网路重试`)
                 } else {
                     if (data) {
 						//console.log(data);
@@ -2048,7 +2030,6 @@ function GetJoyRuninginfo() {
         })
     })
 }
-
 	
 function randomString(e) {
 	e = e || 32;
@@ -2289,7 +2270,7 @@ function GetDateTime(date) {
 }
 
 async function queryScores() {
-	if ($.isPlusVip != 1)
+	if (!$.isPlusVip)
 		return
     let res = ''
     let url = {
